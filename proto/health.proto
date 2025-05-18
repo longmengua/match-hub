@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package health;
+
+service GreetService {
+  rpc SayHello (HeathRequest) returns (HeathResponse);
+}
+
+message HeathRequest {}
+
+message HeathResponse {
+  string version = 1;
+}
