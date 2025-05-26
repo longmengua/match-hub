@@ -1,7 +1,7 @@
 package httpserver
 
 import (
-	handler "server/internal/hanlder"
+	handler "server/internal/httpserver/hanlder"
 
 	"github.com/gin-gonic/gin"
 )

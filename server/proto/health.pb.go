@@ -108,9 +108,9 @@ const file_health_proto_rawDesc = "" +
 	"\fhealth.proto\x12\x06health\"\x0f\n" +
 	"\rHealthRequest\"*\n" +
 	"\x0eHealthResponse\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\tR\aversion2I\n" +
-	"\fGreetService\x129\n" +
-	"\bSayHello\x12\x15.health.HealthRequest\x1a\x16.health.HealthResponseb\x06proto3"
+	"\aversion\x18\x01 \x01(\tR\aversion2G\n" +
+	"\rHealthService\x126\n" +
+	"\x05Check\x12\x15.health.HealthRequest\x1a\x16.health.HealthResponseb\x06proto3"
 
 var (
 	file_health_proto_rawDescOnce sync.Once
@@ -130,8 +130,8 @@ var file_health_proto_goTypes = []any{
 	(*HealthResponse)(nil), // 1: health.HealthResponse
 }
 var file_health_proto_depIdxs = []int32{
-	0, // 0: health.GreetService.SayHello:input_type -> health.HealthRequest
-	1, // 1: health.GreetService.SayHello:output_type -> health.HealthResponse
+	0, // 0: health.HealthService.Check:input_type -> health.HealthRequest
+	1, // 1: health.HealthService.Check:output_type -> health.HealthResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

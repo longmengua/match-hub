@@ -11,13 +11,11 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedGreetServiceServer
+	pb.UnimplementedHealthServiceServer
 }
 
-var gitCommit string
-
 func (s *server) SayHello(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
-	version := gitCommit
+	version := "v1.0.0" // Replace with actual version retrieval logic, e.g., from build info or environment variable
 	return &pb.HealthResponse{Version: version}, nil
 }
 
@@ -28,7 +26,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	pb.RegisterGreetServiceServer(grpcServer, &server{})
+	pb.RegisterHealthServiceServer(grpcServer, &server{})
 
 	log.Println("gRPC server running on :50051")
 	if err := grpcServer.Serve(lis); err != nil {

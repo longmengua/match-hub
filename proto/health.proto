@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package health;
 
-service GreetService {
-  rpc SayHello (HealthRequest) returns (HealthResponse);
+service HealthService {
+  rpc Check (HealthRequest) returns (HealthResponse);
 }
 
 message HealthRequest {}
