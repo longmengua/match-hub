@@ -3,33 +3,29 @@ package main
 import (
 	"context"
 	"log"
-	"net"
-
-	pb "match/proto"
-
-	"google.golang.org/grpc"
+	"match/internal/grpcserver"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
-type server struct {
-	pb.UnimplementedHealthServiceServer
-}
-
-func (s *server) SayHello(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
-	version := "v1.0.0" // Replace with actual version retrieval logic, e.g., from build info or environment variable
-	return &pb.HealthResponse{Version: version}, nil
-}
-
 func main() {
-	lis, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	grpcServer := grpc.NewServer()
-	pb.RegisterHealthServiceServer(grpcServer, &server{})
+	// 啟動 gRPC server
+	go func() {
+		if err := grpcserver.Start(); err != nil {
+			log.Fatalf("gRPC server error: %v", err)
+		}
+	}()
 
-	log.Println("gRPC server running on :50051")
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
-	}
+	// 等待中斷訊號
+	<-ctx.Done()
+	log.Println("Main: shutdown signal received")
+
+	// 呼叫個別 shutdown 函式
+	grpcserver.Stop()
+
+	log.Println("Main: all servers shutdown cleanly")
 }

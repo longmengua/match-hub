@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"server/internal/grpcserver"
 	"server/internal/httpserver"
 	"syscall"
 )
@@ -21,11 +22,11 @@ func main() {
 	}()
 
 	// 啟動 gRPC server
-	// go func() {
-	// 	if err := grpcserver.Start(); err != nil {
-	// 		log.Fatalf("gRPC server error: %v", err)
-	// 	}
-	// }()
+	go func() {
+		if err := grpcserver.Start(); err != nil {
+			log.Fatalf("gRPC server error: %v", err)
+		}
+	}()
 
 	// 等待中斷訊號
 	<-ctx.Done()
@@ -33,7 +34,7 @@ func main() {
 
 	// 呼叫個別 shutdown 函式
 	httpserver.Stop()
-	// grpcserver.Stop()
+	grpcserver.Stop()
 
 	log.Println("Main: all servers shutdown cleanly")
 }
