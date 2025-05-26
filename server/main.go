@@ -17,10 +17,10 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewGreetServiceClient(conn)
-	response, err := client.SayHello(context.Background(), &pb.HeathRequest{Name: "World"})
+	response, err := client.SayHello(context.Background(), &pb.HealthRequest{})
 	if err != nil {
 		log.Fatalf("Error calling SayHello: %v", err)
 	}
 
-	log.Printf("Response from server: %s", response.Message)
+	log.Printf("Response from server: %s", response.Version)
 }
