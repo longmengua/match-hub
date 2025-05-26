@@ -5,7 +5,7 @@
 
 # 啟動應用程式
 dev:  
-	go run main.go
+	go run cmd/main.go
 
 # 安裝依賴
 init:  
