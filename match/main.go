@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	pb "grpc-hello-world/proto"
+	pb "match/proto"
 
 	"google.golang.org/grpc"
 )
@@ -14,9 +14,11 @@ type server struct {
 	pb.UnimplementedGreetServiceServer
 }
 
-func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
-	message := "Hello, " + req.Name
-	return &pb.HelloResponse{Message: message}, nil
+var gitCommit string
+
+func (s *server) SayHello(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+	version := gitCommit
+	return &pb.HealthResponse{Version: version}, nil
 }
 
 func main() {

@@ -21,26 +21,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HeathRequest struct {
+type HealthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HeathRequest) Reset() {
-	*x = HeathRequest{}
+func (x *HealthRequest) Reset() {
+	*x = HealthRequest{}
 	mi := &file_health_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HeathRequest) String() string {
+func (x *HealthRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HeathRequest) ProtoMessage() {}
+func (*HealthRequest) ProtoMessage() {}
 
-func (x *HeathRequest) ProtoReflect() protoreflect.Message {
+func (x *HealthRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_health_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -52,32 +52,32 @@ func (x *HeathRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HeathRequest.ProtoReflect.Descriptor instead.
-func (*HeathRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
+func (*HealthRequest) Descriptor() ([]byte, []int) {
 	return file_health_proto_rawDescGZIP(), []int{0}
 }
 
-type HeathResponse struct {
+type HealthResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HeathResponse) Reset() {
-	*x = HeathResponse{}
+func (x *HealthResponse) Reset() {
+	*x = HealthResponse{}
 	mi := &file_health_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HeathResponse) String() string {
+func (x *HealthResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HeathResponse) ProtoMessage() {}
+func (*HealthResponse) ProtoMessage() {}
 
-func (x *HeathResponse) ProtoReflect() protoreflect.Message {
+func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_health_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -89,12 +89,12 @@ func (x *HeathResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HeathResponse.ProtoReflect.Descriptor instead.
-func (*HeathResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
+func (*HealthResponse) Descriptor() ([]byte, []int) {
 	return file_health_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HeathResponse) GetVersion() string {
+func (x *HealthResponse) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
@@ -105,12 +105,12 @@ var File_health_proto protoreflect.FileDescriptor
 
 const file_health_proto_rawDesc = "" +
 	"\n" +
-	"\fhealth.proto\x12\x06health\"\x0e\n" +
-	"\fHeathRequest\")\n" +
-	"\rHeathResponse\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\tR\aversion2G\n" +
-	"\fGreetService\x127\n" +
-	"\bSayHello\x12\x14.health.HeathRequest\x1a\x15.health.HeathResponseb\x06proto3"
+	"\fhealth.proto\x12\x06health\"\x0f\n" +
+	"\rHealthRequest\"*\n" +
+	"\x0eHealthResponse\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion2I\n" +
+	"\fGreetService\x129\n" +
+	"\bSayHello\x12\x15.health.HealthRequest\x1a\x16.health.HealthResponseb\x06proto3"
 
 var (
 	file_health_proto_rawDescOnce sync.Once
@@ -126,12 +126,12 @@ func file_health_proto_rawDescGZIP() []byte {
 
 var file_health_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_health_proto_goTypes = []any{
-	(*HeathRequest)(nil),  // 0: health.HeathRequest
-	(*HeathResponse)(nil), // 1: health.HeathResponse
+	(*HealthRequest)(nil),  // 0: health.HealthRequest
+	(*HealthResponse)(nil), // 1: health.HealthResponse
 }
 var file_health_proto_depIdxs = []int32{
-	0, // 0: health.GreetService.SayHello:input_type -> health.HeathRequest
-	1, // 1: health.GreetService.SayHello:output_type -> health.HeathResponse
+	0, // 0: health.GreetService.SayHello:input_type -> health.HealthRequest
+	1, // 1: health.GreetService.SayHello:output_type -> health.HealthResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

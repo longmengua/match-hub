@@ -11,6 +11,14 @@ dev:
 init:  
 	go mod tidy
 
+# 建置
+build:  
+	go build -ldflags "-X main.gitCommit=$(git rev-parse --short HEAD)" -o match
+
+# 容器化建置
+docker: 
+	docker build -t match:latest .
+
 # 生成 Protobuf Go 代碼
 proto:  
 	for file in ../proto/*.proto; do \

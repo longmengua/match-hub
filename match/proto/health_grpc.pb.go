@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GreetServiceClient interface {
-	SayHello(ctx context.Context, in *HeathRequest, opts ...grpc.CallOption) (*HeathResponse, error)
+	SayHello(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
 
 type greetServiceClient struct {
@@ -37,9 +37,9 @@ func NewGreetServiceClient(cc grpc.ClientConnInterface) GreetServiceClient {
 	return &greetServiceClient{cc}
 }
 
-func (c *greetServiceClient) SayHello(ctx context.Context, in *HeathRequest, opts ...grpc.CallOption) (*HeathResponse, error) {
+func (c *greetServiceClient) SayHello(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HeathResponse)
+	out := new(HealthResponse)
 	err := c.cc.Invoke(ctx, GreetService_SayHello_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (c *greetServiceClient) SayHello(ctx context.Context, in *HeathRequest, opt
 // All implementations must embed UnimplementedGreetServiceServer
 // for forward compatibility.
 type GreetServiceServer interface {
-	SayHello(context.Context, *HeathRequest) (*HeathResponse, error)
+	SayHello(context.Context, *HealthRequest) (*HealthResponse, error)
 	mustEmbedUnimplementedGreetServiceServer()
 }
 
@@ -62,7 +62,7 @@ type GreetServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGreetServiceServer struct{}
 
-func (UnimplementedGreetServiceServer) SayHello(context.Context, *HeathRequest) (*HeathResponse, error) {
+func (UnimplementedGreetServiceServer) SayHello(context.Context, *HealthRequest) (*HealthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
 }
 func (UnimplementedGreetServiceServer) mustEmbedUnimplementedGreetServiceServer() {}
@@ -87,7 +87,7 @@ func RegisterGreetServiceServer(s grpc.ServiceRegistrar, srv GreetServiceServer)
 }
 
 func _GreetService_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HeathRequest)
+	in := new(HealthRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func _GreetService_SayHello_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: GreetService_SayHello_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GreetServiceServer).SayHello(ctx, req.(*HeathRequest))
+		return srv.(GreetServiceServer).SayHello(ctx, req.(*HealthRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -3,11 +3,11 @@ syntax = "proto3";
 package health;
 
 service GreetService {
-  rpc SayHello (HeathRequest) returns (HeathResponse);
+  rpc SayHello (HealthRequest) returns (HealthResponse);
 }
 
-message HeathRequest {}
+message HealthRequest {}
 
-message HeathResponse {
+message HealthResponse {
   string version = 1;
 }

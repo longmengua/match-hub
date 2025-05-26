@@ -17,7 +17,7 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewGreetServiceClient(conn)
-	response, err := client.SayHello(context.Background(), &pb.HelloRequest{Name: "World"})
+	response, err := client.SayHello(context.Background(), &pb.HeathRequest{Name: "World"})
 	if err != nil {
 		log.Fatalf("Error calling SayHello: %v", err)
 	}
