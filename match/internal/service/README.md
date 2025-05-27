@@ -1,1 +1,3 @@
-# 業務邏輯層 (可呼叫 repository)
+# gRPC/HTTP server handler（調用 usecase）
+
+- 也可稱 controller。
