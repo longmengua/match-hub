@@ -1,13 +1,13 @@
-package usecase
+package entity
 
 import (
-	"match/internal/biz/entity"
+	"slices"
 	"sort"
 )
 
 type OrderBook struct {
-	BuyOrders  []*entity.Order
-	SellOrders []*entity.Order
+	BuyOrders  []*Order
+	SellOrders []*Order
 }
 
 // 價格由高到低，時間早的在前
@@ -30,8 +30,8 @@ func (ob *OrderBook) sortSell() {
 	})
 }
 
-func (ob *OrderBook) AddOrder(order *entity.Order) {
-	if order.Side == entity.SideBuy {
+func (ob *OrderBook) AddOrder(order *Order) {
+	if order.Side == SideBuy {
 		ob.BuyOrders = append(ob.BuyOrders, order)
 		ob.sortBuy()
 	} else {
@@ -40,6 +40,6 @@ func (ob *OrderBook) AddOrder(order *entity.Order) {
 	}
 }
 
-func (ob *OrderBook) RemoveOrder(orderList *[]*entity.Order, index int) {
-	*orderList = append((*orderList)[:index], (*orderList)[index+1:]...)
+func (ob *OrderBook) RemoveOrder(orderList *[]*Order, index int) {
+	*orderList = slices.Delete((*orderList), index, index+1)
 }

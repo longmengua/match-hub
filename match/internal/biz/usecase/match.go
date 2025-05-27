@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func Match(order *entity.Order, ob *OrderBook) []*entity.Trade {
+func Match(order *entity.Order, ob *entity.OrderBook) []*entity.Trade {
 	trades := []*entity.Trade{}
 
 	if order.Side == entity.SideBuy {
