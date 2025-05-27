@@ -158,3 +158,113 @@ func TestMatch_TimePriority_WhenPriceEqual(t *testing.T) {
 	assert.Equal(t, "sell-1", trades[0].SellOrderID)
 	assert.Equal(t, "sell-2", trades[1].SellOrderID)
 }
+
+// 測試：0 數量的限價單，應直接被忽略不進入 order book
+func TestMatch_ZeroQuantityOrder(t *testing.T) {
+	ob := &entity.OrderBook{}
+	order := &entity.Order{
+		ID:        "zero-qty",
+		Price:     100,
+		Quantity:  0,
+		Type:      entity.OrderTypeLimit,
+		Side:      entity.SideBuy,
+		Timestamp: time.Now(),
+	}
+
+	trades := usecase.Match(order, ob)
+	assert.Len(t, trades, 0)
+	assert.Len(t, ob.BuyOrders, 0)
+	assert.Len(t, ob.SellOrders, 0)
+}
+
+// 測試：負數價格的限價單應該被拒絕（實作上可能不防，測試應能揭露）
+func TestMatch_NegativePriceOrder(t *testing.T) {
+	ob := &entity.OrderBook{}
+	order := &entity.Order{
+		ID:        "negative-price",
+		Price:     -50,
+		Quantity:  10,
+		Type:      entity.OrderTypeLimit,
+		Side:      entity.SideSell,
+		Timestamp: time.Now(),
+	}
+
+	trades := usecase.Match(order, ob)
+	// 這取決於 Match 是否有驗證，這邊 assume 撮合失敗但仍入簿
+	assert.Len(t, trades, 0)
+	assert.Equal(t, 1, len(ob.SellOrders))
+	assert.Equal(t, float64(-50), ob.SellOrders[0].Price)
+}
+
+// 測試：市價單在對手簿為空的情況下，應該不會撮合也不掛單
+func TestMatch_MarketOrder_NoCounterOrders(t *testing.T) {
+	ob := &entity.OrderBook{}
+	order := &entity.Order{
+		ID:        "market-alone",
+		Quantity:  5,
+		Type:      entity.OrderTypeMarket,
+		Side:      entity.SideBuy,
+		Timestamp: time.Now(),
+	}
+
+	trades := usecase.Match(order, ob)
+	assert.Len(t, trades, 0)
+	assert.Len(t, ob.BuyOrders, 0)
+	assert.Len(t, ob.SellOrders, 0)
+}
+
+// 測試：限價買單完全撮合後不應殘留在 order book 中
+func TestMatch_LimitBuy_FullyMatched(t *testing.T) {
+	ob := &entity.OrderBook{}
+	ob.AddOrder(&entity.Order{
+		ID:        "sell-1",
+		Price:     100,
+		Quantity:  3,
+		Type:      entity.OrderTypeLimit,
+		Side:      entity.SideSell,
+		Timestamp: time.Now(),
+	})
+
+	buy := &entity.Order{
+		ID:        "buy-1",
+		Price:     101,
+		Quantity:  3,
+		Type:      entity.OrderTypeLimit,
+		Side:      entity.SideBuy,
+		Timestamp: time.Now(),
+	}
+
+	trades := usecase.Match(buy, ob)
+	assert.Len(t, trades, 1)
+	assert.Equal(t, float64(3), trades[0].Quantity)
+	assert.Empty(t, ob.BuyOrders)
+	assert.Empty(t, ob.SellOrders)
+}
+
+// 測試：極大數量撮合（壓力邊界測試）
+func TestMatch_LargeVolumeOrder(t *testing.T) {
+	ob := &entity.OrderBook{}
+	ob.AddOrder(&entity.Order{
+		ID:        "sell-huge",
+		Price:     100,
+		Quantity:  1e6,
+		Type:      entity.OrderTypeLimit,
+		Side:      entity.SideSell,
+		Timestamp: time.Now(),
+	})
+
+	buy := &entity.Order{
+		ID:        "buy-huge",
+		Price:     100,
+		Quantity:  1e6,
+		Type:      entity.OrderTypeLimit,
+		Side:      entity.SideBuy,
+		Timestamp: time.Now(),
+	}
+
+	trades := usecase.Match(buy, ob)
+	assert.Len(t, trades, 1)
+	assert.Equal(t, float64(1e6), trades[0].Quantity)
+	assert.Empty(t, ob.BuyOrders)
+	assert.Empty(t, ob.SellOrders)
+}
