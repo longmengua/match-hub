@@ -8,6 +8,11 @@ import (
 func Match(order *entity.Order, ob *entity.OrderBook) []*entity.Trade {
 	trades := []*entity.Trade{}
 
+	// 拒絕不合法的 order，return 空撮合
+	if !isValidSide(order.Side) || !isValidType(order.Type) || order.Quantity <= 0 {
+		return trades
+	}
+
 	if order.Side == entity.SideBuy {
 		// 與最便宜的賣單撮合
 		for i := 0; i < len(ob.SellOrders) && order.Quantity > 0; {
@@ -38,7 +43,9 @@ func Match(order *entity.Order, ob *entity.OrderBook) []*entity.Trade {
 				i++
 			}
 		}
-	} else { // SideSell
+	}
+
+	if order.Side == entity.SideSell {
 		for i := 0; i < len(ob.BuyOrders) && order.Quantity > 0; {
 			buy := ob.BuyOrders[i]
 
@@ -68,7 +75,7 @@ func Match(order *entity.Order, ob *entity.OrderBook) []*entity.Trade {
 		}
 	}
 
-	// 剩餘掛進 order book（限價單才掛）
+	// 掛回簿子（僅限價單）
 	if order.Quantity > 0 && order.Type == entity.OrderTypeLimit {
 		ob.AddOrder(order)
 	}
@@ -81,4 +88,12 @@ func min(a, b float64) float64 {
 		return a
 	}
 	return b
+}
+
+func isValidSide(side entity.OrderSide) bool {
+	return side == entity.SideBuy || side == entity.SideSell
+}
+
+func isValidType(typ entity.OrderType) bool {
+	return typ == entity.OrderTypeLimit || typ == entity.OrderTypeMarket
 }
