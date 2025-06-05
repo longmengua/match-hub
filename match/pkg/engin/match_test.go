@@ -1,85 +1,62 @@
-package usecase_test
+package engin_test
 
 import (
 	"match/internal/biz/entity"
-	"match/internal/biz/usecase"
+	"match/pkg/engin"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// 工具方法：快速建立一張 Order
+// 工具方法：快速建立一張訂單
 func newOrder(id string, price, qty float64, orderType entity.OrderType, side entity.OrderSide, tsOffset int) *entity.Order {
 	return &entity.Order{
-		ID:        id,
-		Price:     price,
-		Quantity:  qty,
-		Type:      orderType,
-		Side:      side,
-		Timestamp: time.Now().Add(time.Duration(tsOffset) * time.Second),
+		ID:             id,
+		Price:          price,
+		Quantity:       qty,
+		LeavesQuantity: qty,
+		Type:           orderType,
+		Side:           side,
+		Timestamp:      time.Now().Add(time.Duration(tsOffset) * time.Second),
 	}
 }
 
 // 測試：限價買單遇到空的 order book，應該進入買單簿而不是成交
 func TestMatch_BuyOrder_NoMatch(t *testing.T) {
 	ob := &entity.OrderBook{}
+	buyOrder := newOrder("buy-2", 100, 5, entity.TypeLimit, entity.SideBuy, 0)
 
-	buyOrder := &entity.Order{
-		ID:        "buy-2",
-		Price:     100,
-		Quantity:  5,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideBuy,
-		Timestamp: time.Now(),
-	}
-
-	trades := usecase.Match(buyOrder, ob)
+	trades := engin.Match(buyOrder, ob)
 
 	assert.Len(t, trades, 0)
 	assert.Equal(t, 1, len(ob.BuyOrders))
 	assert.Equal(t, "buy-2", ob.BuyOrders[0].ID)
 }
 
-// 測試：限價買單價格高於現有賣單時，應該進行撮合成交
+// 測試：限價買單價格高於現有賣單時，應該撮合成交
 func TestMatch_BuyOrder_MatchesSellOrder(t *testing.T) {
 	ob := &entity.OrderBook{}
+	ob.AddOrder(newOrder("sell-1", 100, 5, entity.TypeLimit, entity.SideSell, 0))
+	buyOrder := newOrder("buy-1", 101, 3, entity.TypeLimit, entity.SideBuy, 1)
 
-	sellOrder := &entity.Order{
-		ID:        "sell-1",
-		Price:     100,
-		Quantity:  5,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideSell,
-		Timestamp: time.Now(),
-	}
-	ob.AddOrder(sellOrder)
-
-	buyOrder := &entity.Order{
-		ID:        "buy-1",
-		Price:     101,
-		Quantity:  3,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideBuy,
-		Timestamp: time.Now(),
-	}
-	trades := usecase.Match(buyOrder, ob)
+	trades := engin.Match(buyOrder, ob)
 
 	assert.Len(t, trades, 1)
-	assert.Equal(t, "buy-1", trades[0].BuyOrderID)
-	assert.Equal(t, "sell-1", trades[0].SellOrderID)
-	assert.Equal(t, float64(100), trades[0].Price)
-	assert.Equal(t, float64(3), trades[0].Quantity)
-	assert.Equal(t, float64(2), ob.SellOrders[0].Quantity)
+	assert.Equal(t, "buy-1", trades[0].BuyOrder.ID)
+	assert.Equal(t, "sell-1", trades[0].SellOrder.ID)
+	assert.Equal(t, float64(100), trades[0].Price)               // 成交價格應為對手賣單價格
+	assert.Equal(t, float64(3), trades[0].Quantity)              // 成交數量
+	assert.Equal(t, float64(2), ob.SellOrders[0].LeavesQuantity) // 賣單剩餘 2
 }
 
-// 測試：限價買單價格低於賣單，應該無法撮合並掛入 order book
+// 測試：限價買單價格低於賣單，無法撮合，應掛入買單簿
 func TestMatch_LimitBuy_PriceTooLow_NoMatch(t *testing.T) {
 	ob := &entity.OrderBook{}
 	ob.AddOrder(newOrder("sell-1", 105, 5, entity.TypeLimit, entity.SideSell, 0))
-
 	buy := newOrder("buy-3", 100, 5, entity.TypeLimit, entity.SideBuy, 1)
-	trades := usecase.Match(buy, ob)
+
+	trades := engin.Match(buy, ob)
 
 	assert.Len(t, trades, 0)
 	assert.Equal(t, 1, len(ob.BuyOrders))
@@ -92,7 +69,7 @@ func TestMatch_MarketBuy_MatchWithBestPrice(t *testing.T) {
 	ob.AddOrder(newOrder("sell-2", 99, 3, entity.TypeLimit, entity.SideSell, 1))
 
 	buy := newOrder("buy-4", 0, 6, entity.TypeMarket, entity.SideBuy, 2)
-	trades := usecase.Match(buy, ob)
+	trades := engin.Match(buy, ob)
 
 	assert.Len(t, trades, 2)
 	assert.Equal(t, float64(3), trades[0].Quantity)
@@ -101,13 +78,13 @@ func TestMatch_MarketBuy_MatchWithBestPrice(t *testing.T) {
 	assert.Equal(t, float64(100), trades[1].Price)
 }
 
-// 測試：限價賣單價格低於現有買單時，應該進行成交
+// 測試：限價賣單價格低於現有買單時，應進行撮合
 func TestMatch_LimitSell_Match_Success(t *testing.T) {
 	ob := &entity.OrderBook{}
 	ob.AddOrder(newOrder("buy-1", 101, 5, entity.TypeLimit, entity.SideBuy, 0))
-
 	sell := newOrder("sell-1", 100, 3, entity.TypeLimit, entity.SideSell, 1)
-	trades := usecase.Match(sell, ob)
+
+	trades := engin.Match(sell, ob)
 
 	assert.Len(t, trades, 1)
 	assert.Equal(t, float64(3), trades[0].Quantity)
@@ -121,7 +98,7 @@ func TestMatch_MarketSell_MatchWithBestBuy(t *testing.T) {
 	ob.AddOrder(newOrder("buy-2", 100, 3, entity.TypeLimit, entity.SideBuy, 1))
 
 	sell := newOrder("sell-1", 0, 4, entity.TypeMarket, entity.SideSell, 2)
-	trades := usecase.Match(sell, ob)
+	trades := engin.Match(sell, ob)
 
 	assert.Len(t, trades, 2)
 	assert.Equal(t, float64(2), trades[0].Quantity)
@@ -130,139 +107,88 @@ func TestMatch_MarketSell_MatchWithBestBuy(t *testing.T) {
 	assert.Equal(t, float64(100), trades[1].Price)
 }
 
-// 測試：一張單可以吃掉多張對手單（連續撮合），若不夠則掛入簿中
+// 測試：限價單可連續吃多筆對手單，若未吃完則剩餘掛簿
 func TestMatch_MultiMatch_PartialRemaining(t *testing.T) {
 	ob := &entity.OrderBook{}
 	ob.AddOrder(newOrder("sell-1", 99, 2, entity.TypeLimit, entity.SideSell, 0))
 	ob.AddOrder(newOrder("sell-2", 100, 2, entity.TypeLimit, entity.SideSell, 1))
-
 	buy := newOrder("buy-1", 100, 5, entity.TypeLimit, entity.SideBuy, 2)
-	trades := usecase.Match(buy, ob)
+
+	trades := engin.Match(buy, ob)
 
 	assert.Len(t, trades, 2)
 	assert.Equal(t, float64(4), trades[0].Quantity+trades[1].Quantity)
 	assert.Equal(t, 1, len(ob.BuyOrders))
-	assert.Equal(t, float64(1), ob.BuyOrders[0].Quantity)
+	assert.Equal(t, float64(1), ob.BuyOrders[0].LeavesQuantity)
 }
 
-// 測試：價格相同時，應以時間先後順序進行撮合（時間優先原則）
+// 測試：相同價格時，應根據時間先後順序（時間優先原則）撮合
 func TestMatch_TimePriority_WhenPriceEqual(t *testing.T) {
 	ob := &entity.OrderBook{}
-	ob.AddOrder(newOrder("sell-1", 100, 2, entity.TypeLimit, entity.SideSell, 0)) // 較早
+	ob.AddOrder(newOrder("sell-1", 100, 2, entity.TypeLimit, entity.SideSell, 0))
 	ob.AddOrder(newOrder("sell-2", 100, 2, entity.TypeLimit, entity.SideSell, 1))
-
 	buy := newOrder("buy-1", 100, 3, entity.TypeLimit, entity.SideBuy, 2)
-	trades := usecase.Match(buy, ob)
+
+	trades := engin.Match(buy, ob)
 
 	assert.Len(t, trades, 2)
-	assert.Equal(t, "sell-1", trades[0].SellOrderID)
-	assert.Equal(t, "sell-2", trades[1].SellOrderID)
+	assert.Equal(t, "sell-1", trades[0].SellOrder.ID)
+	assert.Equal(t, "sell-2", trades[1].SellOrder.ID)
 }
 
-// 測試：0 數量的限價單，應直接被忽略不進入 order book
+// 測試：0 數量訂單應被忽略，不可進入 order book
 func TestMatch_ZeroQuantityOrder(t *testing.T) {
 	ob := &entity.OrderBook{}
-	order := &entity.Order{
-		ID:        "zero-qty",
-		Price:     100,
-		Quantity:  0,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideBuy,
-		Timestamp: time.Now(),
-	}
+	order := newOrder("zero-qty", 100, 0, entity.TypeLimit, entity.SideBuy, 0)
 
-	trades := usecase.Match(order, ob)
+	trades := engin.Match(order, ob)
 	assert.Len(t, trades, 0)
 	assert.Len(t, ob.BuyOrders, 0)
 	assert.Len(t, ob.SellOrders, 0)
 }
 
-// 測試：負數價格的限價單應該被拒絕（實作上可能不防，測試應能揭露）
+// 測試：負數價格的限價單（不合理）預期仍進入簿中（視實作處理）
 func TestMatch_NegativePriceOrder(t *testing.T) {
 	ob := &entity.OrderBook{}
-	order := &entity.Order{
-		ID:        "negative-price",
-		Price:     -50,
-		Quantity:  10,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideSell,
-		Timestamp: time.Now(),
-	}
+	order := newOrder("negative-price", -50, 10, entity.TypeLimit, entity.SideSell, 0)
 
-	trades := usecase.Match(order, ob)
-	// 這取決於 Match 是否有驗證，這邊 assume 撮合失敗但仍入簿
+	trades := engin.Match(order, ob)
 	assert.Len(t, trades, 0)
 	assert.Equal(t, 1, len(ob.SellOrders))
 	assert.Equal(t, float64(-50), ob.SellOrders[0].Price)
 }
 
-// 測試：市價單在對手簿為空的情況下，應該不會撮合也不掛單
+// 測試：市價單在對手簿為空時，不會撮合也不會掛單
 func TestMatch_MarketOrder_NoCounterOrders(t *testing.T) {
 	ob := &entity.OrderBook{}
-	order := &entity.Order{
-		ID:        "market-alone",
-		Quantity:  5,
-		Type:      entity.TypeMarket,
-		Side:      entity.SideBuy,
-		Timestamp: time.Now(),
-	}
+	order := newOrder("market-alone", 0, 5, entity.TypeMarket, entity.SideBuy, 0)
 
-	trades := usecase.Match(order, ob)
+	trades := engin.Match(order, ob)
 	assert.Len(t, trades, 0)
 	assert.Len(t, ob.BuyOrders, 0)
 	assert.Len(t, ob.SellOrders, 0)
 }
 
-// 測試：限價買單完全撮合後不應殘留在 order book 中
+// 測試：限價買單完全撮合後應不殘留在 order book 中
 func TestMatch_LimitBuy_FullyMatched(t *testing.T) {
 	ob := &entity.OrderBook{}
-	ob.AddOrder(&entity.Order{
-		ID:        "sell-1",
-		Price:     100,
-		Quantity:  3,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideSell,
-		Timestamp: time.Now(),
-	})
+	ob.AddOrder(newOrder("sell-1", 100, 3, entity.TypeLimit, entity.SideSell, 0))
+	buy := newOrder("buy-1", 101, 3, entity.TypeLimit, entity.SideBuy, 1)
 
-	buy := &entity.Order{
-		ID:        "buy-1",
-		Price:     101,
-		Quantity:  3,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideBuy,
-		Timestamp: time.Now(),
-	}
-
-	trades := usecase.Match(buy, ob)
+	trades := engin.Match(buy, ob)
 	assert.Len(t, trades, 1)
 	assert.Equal(t, float64(3), trades[0].Quantity)
 	assert.Empty(t, ob.BuyOrders)
 	assert.Empty(t, ob.SellOrders)
 }
 
-// 測試：極大數量撮合（壓力邊界測試）
+// 測試：大數量撮合壓力測試
 func TestMatch_LargeVolumeOrder(t *testing.T) {
 	ob := &entity.OrderBook{}
-	ob.AddOrder(&entity.Order{
-		ID:        "sell-huge",
-		Price:     100,
-		Quantity:  1e6,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideSell,
-		Timestamp: time.Now(),
-	})
+	ob.AddOrder(newOrder("sell-huge", 100, 1e6, entity.TypeLimit, entity.SideSell, 0))
+	buy := newOrder("buy-huge", 100, 1e6, entity.TypeLimit, entity.SideBuy, 1)
 
-	buy := &entity.Order{
-		ID:        "buy-huge",
-		Price:     100,
-		Quantity:  1e6,
-		Type:      entity.TypeLimit,
-		Side:      entity.SideBuy,
-		Timestamp: time.Now(),
-	}
-
-	trades := usecase.Match(buy, ob)
+	trades := engin.Match(buy, ob)
 	assert.Len(t, trades, 1)
 	assert.Equal(t, float64(1e6), trades[0].Quantity)
 	assert.Empty(t, ob.BuyOrders)

@@ -1,4 +1,4 @@
-package server_test
+package server
 
 import (
 	"log"
@@ -15,7 +15,7 @@ var (
 	listener net.Listener
 )
 
-func Start() error {
+func StartGRPCServer() error {
 	listener, _ = net.Listen("tcp", ":50051")
 
 	grpcSrv = grpc.NewServer()
@@ -26,7 +26,7 @@ func Start() error {
 	return grpcSrv.Serve(listener)
 }
 
-func Stop() {
+func StopGRPCServer() {
 	log.Println("Shutting down gRPC server...")
 
 	// 支援優雅關閉

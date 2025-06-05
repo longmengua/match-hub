@@ -19,7 +19,7 @@ func Match(order *entity.Order, ob *entity.OrderBook) []*entity.Trade {
 			sell := ob.SellOrders[i]
 
 			// 處理限價單不能接受高價
-			if order.Type == entity.OrderTypeLimit && order.Price < sell.Price {
+			if order.Type == entity.TypeLimit && order.Price < sell.Price {
 				break
 			}
 
@@ -49,7 +49,7 @@ func Match(order *entity.Order, ob *entity.OrderBook) []*entity.Trade {
 		for i := 0; i < len(ob.BuyOrders) && order.Quantity > 0; {
 			buy := ob.BuyOrders[i]
 
-			if order.Type == entity.OrderTypeLimit && order.Price > buy.Price {
+			if order.Type == entity.TypeLimit && order.Price > buy.Price {
 				break
 			}
 
@@ -76,7 +76,7 @@ func Match(order *entity.Order, ob *entity.OrderBook) []*entity.Trade {
 	}
 
 	// 掛回簿子（僅限價單）
-	if order.Quantity > 0 && order.Type == entity.OrderTypeLimit {
+	if order.Quantity > 0 && order.Type == entity.TypeLimit {
 		ob.AddOrder(order)
 	}
 
@@ -95,5 +95,5 @@ func isValidSide(side entity.OrderSide) bool {
 }
 
 func isValidType(typ entity.OrderType) bool {
-	return typ == entity.OrderTypeLimit || typ == entity.OrderTypeMarket
+	return typ == entity.TypeLimit || typ == entity.TypeMarket
 }
