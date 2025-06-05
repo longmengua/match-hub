@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"log"
-	"match/internal/grpcserver"
+	"match/internal/server"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,7 +15,7 @@ func main() {
 
 	// 啟動 gRPC server
 	go func() {
-		if err := grpcserver.Start(); err != nil {
+		if err := server.StartGRPCServer(); err != nil {
 			log.Fatalf("gRPC server error: %v", err)
 		}
 	}()
@@ -25,7 +25,7 @@ func main() {
 	log.Println("Main: shutdown signal received")
 
 	// 呼叫個別 shutdown 函式
-	grpcserver.Stop()
+	server.StopGRPCServer()
 
 	log.Println("Main: all servers shutdown cleanly")
 }
