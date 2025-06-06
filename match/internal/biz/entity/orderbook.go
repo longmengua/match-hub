@@ -10,6 +10,14 @@ type OrderBook struct {
 	SellOrders []*Order
 }
 
+// NewOrderBook 創建一個新的訂單簿
+func NewOrderBook() *OrderBook {
+	return &OrderBook{
+		BuyOrders:  []*Order{},
+		SellOrders: []*Order{},
+	}
+}
+
 // 價格由高到低，時間早的在前
 func (ob *OrderBook) sortBuy() {
 	sort.Slice(ob.BuyOrders, func(i, j int) bool {

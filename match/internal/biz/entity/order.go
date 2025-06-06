@@ -36,6 +36,18 @@ type Order struct {
 	Timestamp      time.Time // 下單時間（用於排序撮合）
 }
 
+func NewOrder(id string, price, qty float64, orderType OrderType, side OrderSide, tsOffset int) *Order {
+	return &Order{
+		ID:             id,
+		Price:          price,
+		Quantity:       qty,
+		LeavesQuantity: qty,
+		Type:           orderType,
+		Side:           side,
+		Timestamp:      time.Now().Add(time.Duration(tsOffset) * time.Second),
+	}
+}
+
 // / 成交紀錄結構（Trade）
 // / 描述一筆實際撮合成交的紀錄
 type Trade struct {
