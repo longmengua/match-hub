@@ -16,7 +16,7 @@ import (
 func TestRedisClient_Single(t *testing.T) {
 	ctx := context.Background()
 
-	client, err := redisclient.New("single", []string{"redis.docker-compose-gui.orb.local:6390"}, "", 0)
+	client, err := redisclient.New("single", []string{"redis-signle.docker-compose-gui.orb.local:6379"}, "", 0)
 	require.NoError(t, err)
 
 	key := "test:key:single"
@@ -41,7 +41,7 @@ func TestRedisClient_Cluster(t *testing.T) {
 
 	// 請確認這些地址是你的 cluster 節點
 	clusterAddrs := []string{
-		"redis-master.docker-compose-gui.orb.local:6379",
+		"redis-1.docker-compose-gui.orb.local:6379",
 	}
 	client, err := redisclient.New("cluster", clusterAddrs, "", 0)
 	require.NoError(t, err)
