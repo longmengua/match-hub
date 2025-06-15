@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// 請先確保你在本地或測試環境中有一個 Redis single instance 以及 Redis cluster 可用
-
 func TestRedisClient_Single(t *testing.T) {
 	ctx := context.Background()
 

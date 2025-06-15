@@ -8,14 +8,14 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-var _ interfaces.KafkaClient = (*KafkaClient)(nil)
+var _ interfaces.KafkaClient = (*KafkaGoClient)(nil)
 
-type KafkaClient struct {
+type KafkaGoClient struct {
 	writer *kafka.Writer
 	reader *kafka.Reader
 }
 
-func New(broker, topic, groupID string) *KafkaClient {
+func NewKafkaGo(broker, topic, groupID string) *KafkaGoClient {
 	writer := &kafka.Writer{
 		Addr:     kafka.TCP(broker),
 		Topic:    topic,
@@ -28,20 +28,20 @@ func New(broker, topic, groupID string) *KafkaClient {
 		GroupID: groupID,
 	})
 
-	return &KafkaClient{
+	return &KafkaGoClient{
 		writer: writer,
 		reader: reader,
 	}
 }
 
-func (c *KafkaClient) SendMessage(ctx context.Context, key, value string) error {
+func (c *KafkaGoClient) SendMessage(ctx context.Context, key, value string) error {
 	return c.writer.WriteMessages(ctx, kafka.Message{
 		Key:   []byte(key),
 		Value: []byte(value),
 	})
 }
 
-func (c *KafkaClient) ReadMessage(ctx context.Context) (string, string, error) {
+func (c *KafkaGoClient) ReadMessage(ctx context.Context) (string, string, error) {
 	msg, err := c.reader.ReadMessage(ctx)
 	if err != nil {
 		return "", "", err
@@ -49,7 +49,7 @@ func (c *KafkaClient) ReadMessage(ctx context.Context) (string, string, error) {
 	return string(msg.Key), string(msg.Value), nil
 }
 
-func (c *KafkaClient) Close() error {
+func (c *KafkaGoClient) Close() error {
 	err1 := c.writer.Close()
 	err2 := c.reader.Close()
 	if err1 != nil {

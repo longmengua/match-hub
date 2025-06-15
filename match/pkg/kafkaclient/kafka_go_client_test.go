@@ -35,7 +35,7 @@ func TestMockKafkaClient(t *testing.T) {
 
 	createTestTopic(t, broker, topic)
 
-	client := kafkaclient.New(broker, topic, groupID)
+	client := kafkaclient.NewKafkaGo(broker, topic, groupID)
 
 	// 測試 Send
 	err := client.SendMessage(context.Background(), "k1", "v1")
