@@ -1,12 +1,7 @@
 package interfaces
 
-import "context"
-
 type KafkaClient interface {
-	// Producer 功能
-	SendMessage(ctx context.Context, key, value string) error
-	// Consumer 功能
-	ReadMessage(ctx context.Context) (key string, value string, err error)
-	// 通用資源釋放
+	SendMessage(topic string, key, value []byte) error
+	ConsumeMessages(topic string, handler func(key, value []byte)) error
 	Close() error
 }

@@ -2,58 +2,52 @@ package kafkaclient
 
 import (
 	"context"
-
-	"match/internal/biz/interfaces"
+	"log"
 
 	"github.com/segmentio/kafka-go"
 )
-
-var _ interfaces.KafkaClient = (*KafkaGoClient)(nil)
 
 type KafkaGoClient struct {
 	writer *kafka.Writer
 	reader *kafka.Reader
 }
 
-func NewKafkaGo(broker, topic, groupID string) *KafkaGoClient {
-	writer := &kafka.Writer{
-		Addr:     kafka.TCP(broker),
-		Topic:    topic,
-		Balancer: &kafka.LeastBytes{},
-	}
-
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: []string{broker},
-		Topic:   topic,
-		GroupID: groupID,
-	})
-
+func NewKafkaGoClient(brokers []string, topic string) *KafkaGoClient {
 	return &KafkaGoClient{
-		writer: writer,
-		reader: reader,
+		writer: kafka.NewWriter(kafka.WriterConfig{
+			Brokers: brokers,
+			Topic:   topic,
+		}),
+		reader: kafka.NewReader(kafka.ReaderConfig{
+			Brokers: brokers,
+			Topic:   topic,
+			GroupID: "my-group",
+		}),
 	}
 }
 
-func (c *KafkaGoClient) SendMessage(ctx context.Context, key, value string) error {
-	return c.writer.WriteMessages(ctx, kafka.Message{
-		Key:   []byte(key),
-		Value: []byte(value),
+func (c *KafkaGoClient) SendMessage(topic string, key, value []byte) error {
+	return c.writer.WriteMessages(context.Background(), kafka.Message{
+		Key:   key,
+		Value: value,
 	})
 }
 
-func (c *KafkaGoClient) ReadMessage(ctx context.Context) (string, string, error) {
-	msg, err := c.reader.ReadMessage(ctx)
-	if err != nil {
-		return "", "", err
-	}
-	return string(msg.Key), string(msg.Value), nil
+func (c *KafkaGoClient) ConsumeMessages(topic string, handler func(key, value []byte)) error {
+	go func() {
+		for {
+			msg, err := c.reader.ReadMessage(context.Background())
+			if err != nil {
+				log.Println("error reading message:", err)
+				continue
+			}
+			handler(msg.Key, msg.Value)
+		}
+	}()
+	return nil
 }
 
 func (c *KafkaGoClient) Close() error {
-	err1 := c.writer.Close()
-	err2 := c.reader.Close()
-	if err1 != nil {
-		return err1
-	}
-	return err2
+	_ = c.writer.Close()
+	return c.reader.Close()
 }
