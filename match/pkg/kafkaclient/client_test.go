@@ -13,11 +13,17 @@ const address = "kafka.docker-compose-gui.orb.local:9092"
 
 // Helper：測試流程封裝
 func testKafkaClient(t *testing.T, client interfaces.KafkaClient) {
+	// 先確認是否有topic存在，若不存在則創建
+	err := client.CreateTopics("test-topic")
+	if err != nil {
+		t.Fatalf("CreateTopics failed: %v", err)
+	}
+	// ✅ 測試發送和接收消息
 	topic := "test-topic"
 	msgKey := []byte("test-key")
 	msgVal := []byte("test-value")
 
-	err := client.SendMessage(topic, msgKey, msgVal)
+	err = client.SendMessage(topic, msgKey, msgVal)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}
