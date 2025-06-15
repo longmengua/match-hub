@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"slices"
 	"sort"
 )
 
@@ -49,5 +48,5 @@ func (ob *OrderBook) AddOrder(order *Order) {
 }
 
 func (ob *OrderBook) RemoveOrder(orderList *[]*Order, index int) {
-	*orderList = slices.Delete((*orderList), index, index+1)
+	*orderList = append((*orderList)[:index], (*orderList)[index+1:]...)
 }
