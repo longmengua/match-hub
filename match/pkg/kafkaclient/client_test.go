@@ -9,8 +9,6 @@ import (
 	"match/pkg/kafkaclient"
 )
 
-const address = "kafka.docker-compose-gui.orb.local:9092"
-
 // Helper：測試流程封裝
 func testKafkaClient(t *testing.T, client interfaces.KafkaClient) {
 	// 先確認是否有topic存在，若不存在則創建
@@ -51,9 +49,11 @@ func testKafkaClient(t *testing.T, client interfaces.KafkaClient) {
 	client.Close()
 }
 
+var address = []string{"localhost:19092", "localhost:19093", "localhost:19094"}
+
 // ✅ 測試 Sarama 實作
 func TestSaramaClient(t *testing.T) {
-	client, err := kafkaclient.NewSaramaClient([]string{address})
+	client, err := kafkaclient.NewSaramaClient(address)
 	if err != nil {
 		t.Fatalf("Failed to create SaramaClient: %v", err)
 	}
@@ -62,6 +62,6 @@ func TestSaramaClient(t *testing.T) {
 
 // ✅ 測試 kafka-go 實作
 func TestKafkaGoClient(t *testing.T) {
-	client := kafkaclient.NewKafkaGoClient([]string{address}, "test-topic")
+	client := kafkaclient.NewKafkaGoClient(address, "test-topic")
 	testKafkaClient(t, client)
 }

@@ -2,6 +2,7 @@ package kafkaclient
 
 import (
 	"match/internal/biz/interfaces"
+	"strings"
 
 	"github.com/IBM/sarama"
 )
@@ -58,9 +59,10 @@ func (c *SaramaClient) CreateTopics(topic string) error {
 
 // 判斷錯誤是否為 "topic 已存在"
 func isTopicAlreadyExistsError(err error) bool {
-	// Kafka 2.6+ 返回 TopicAlreadyExists 錯誤
-	// sarama 沒有內建錯誤類型辨識，只能用錯誤字串判斷
-	return err != nil && (err.Error() == "Topic with this name already exists.")
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "Topic with this name already exists")
 }
 
 // SendMessage 發送訊息到指定 topic
@@ -76,7 +78,7 @@ func (c *SaramaClient) SendMessage(topic string, key, value []byte) error {
 
 // ConsumeMessages 開始消費訊息，使用 handler 處理每條訊息
 func (c *SaramaClient) ConsumeMessages(topic string, handler func(key, value []byte)) error {
-	partitionConsumer, err := c.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
+	partitionConsumer, err := c.consumer.ConsumePartition(topic, 0, sarama.OffsetOldest)
 	if err != nil {
 		return err
 	}
