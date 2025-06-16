@@ -1,6 +1,7 @@
 package kafkaclient
 
 import (
+	"context"
 	"log"
 	"match/internal/biz/interfaces"
 	"strconv"
@@ -80,7 +81,9 @@ func (c *KafkaGoClient) SendMessage(topic string, key, value []byte) error {
 		Value: value, // 訊息內容
 	}
 	// 寫入訊息
-	return c.writer.WriteMessages(nil, msg)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return c.writer.WriteMessages(ctx, msg)
 }
 
 // ConsumeMessages 開始消費訊息，收到後透過 handler 處理
@@ -88,7 +91,9 @@ func (c *KafkaGoClient) ConsumeMessages(topic string, handler func(key, value []
 	go func() {
 		for {
 			// 讀取一則訊息
-			msg, err := c.reader.ReadMessage(nil)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			msg, err := c.reader.ReadMessage(ctx)
 			if err != nil {
 				log.Println("讀取訊息時發生錯誤：", err)
 				time.Sleep(time.Second) // 簡單的 retry 機制
