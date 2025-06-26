@@ -1,46 +1,50 @@
 package server_test
 
 import (
-	"log"
-	"match/internal/service"
+	"context"
+	"match/internal/server"
 	"match/proto"
-	"net"
+	"testing"
 	"time"
 
 	"google.golang.org/grpc"
 )
 
-var (
-	grpcSrv  *grpc.Server
-	listener net.Listener
-)
-
-func Start() error {
-	listener, _ = net.Listen("tcp", ":50051")
-
-	grpcSrv = grpc.NewServer()
-	// 在這裡註冊你的 gRPC service，例如：
-	proto.RegisterHealthServiceServer(grpcSrv, &service.Server{})
-
-	log.Println("gRPC server listening on :50051")
-	return grpcSrv.Serve(listener)
-}
-
-func Stop() {
-	log.Println("Shutting down gRPC server...")
-
-	// 支援優雅關閉
-	stopped := make(chan struct{})
+func TestGRPCServerLifecycle(t *testing.T) {
+	// 啟動 gRPC 伺服器
 	go func() {
-		grpcSrv.GracefulStop()
-		close(stopped)
+		if err := server.StartGRPCServer(); err != nil {
+			t.Errorf("failed to start gRPC server: %v", err)
+		}
 	}()
 
-	select {
-	case <-stopped:
-		log.Println("gRPC server shutdown completed")
-	case <-time.After(5 * time.Second):
-		log.Println("gRPC server shutdown timed out, forcing stop")
-		grpcSrv.Stop()
+	// 等待 server 啟動（實際應更健壯，可改用 health check）
+	time.Sleep(500 * time.Millisecond)
+
+	// 建立 gRPC client 連線，驗證 server 有啟動
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(2*time.Second))
+	if err != nil {
+		t.Fatalf("failed to connect to gRPC server: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewHealthServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// 執行 Health Check 或其他測試 RPC
+	_, err = client.Check(ctx, &proto.HealthRequest{})
+	if err != nil {
+		t.Errorf("Ping RPC failed: %v", err)
+	}
+
+	// 停止 gRPC server
+	server.StopGRPCServer()
+
+	// 再次請求應失敗（可選）
+	_, err = client.Check(ctx, &proto.HealthRequest{})
+	if err == nil {
+		t.Error("expected error after server shutdown, got nil")
 	}
 }
