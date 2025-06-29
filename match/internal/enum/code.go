@@ -7,8 +7,7 @@ package enum
 type Code int
 
 const (
-	CodeOk           = Code(102000)
-	CodeExists       = Code(504001)
-	CodeNotFound     = Code(504040)
-	CodeParamInvalid = Code(504000)
+	Ok            = Code(200001)
+	InternalError = Code(500001)
+	InvalidParams = Code(400001)
 )
