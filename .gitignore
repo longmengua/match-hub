@@ -1,1 +1,4 @@
 **/bin/*
+
+## go stringer generate code
+**/enum/*_string.go 

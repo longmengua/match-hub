@@ -2,12 +2,14 @@ syntax = "proto3";
 
 package health;
 
-service HealthService {
-  rpc Check (HealthRequest) returns (HealthResponse);
+message HealthRequest {
+  string must_be_hello = 1;
 }
-
-message HealthRequest {}
 
 message HealthResponse {
   string version = 1;
+}
+
+service HealthService {
+  rpc Check (HealthRequest) returns (HealthResponse);
 }
