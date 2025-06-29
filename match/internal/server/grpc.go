@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+
+	"match/internal/middleware"
 )
 
 var (
@@ -18,7 +20,13 @@ var (
 func StartGRPCServer() error {
 	listener, _ = net.Listen("tcp", ":50051")
 
-	grpcSrv = grpc.NewServer()
+	// Create gRPC server with middleware interceptors
+	grpcSrv = grpc.NewServer(
+		grpc.UnaryInterceptor(middleware.ChainUnaryInterceptors(
+			middleware.TraceIDInterceptor,
+			middleware.RecoveryInterceptor,
+		)),
+	)
 	// 在這裡註冊你的 gRPC service，例如：
 	proto.RegisterHealthServiceServer(grpcSrv, &service.Server{})
 

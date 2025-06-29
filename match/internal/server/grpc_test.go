@@ -2,48 +2,75 @@ package server_test
 
 import (
 	"context"
+	"errors"
 	"match/internal/server"
 	"match/proto"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
+func waitForServerReady(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for time.Now().Before(deadline) {
+		conn, err := grpc.Dial("localhost:50051",
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+			grpc.WithTimeout(200*time.Millisecond),
+		)
+		if err == nil {
+			conn.Close()
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return errors.New("gRPC server did not become ready in time")
+}
+
 func TestGRPCServerLifecycle(t *testing.T) {
-	// 啟動 gRPC 伺服器
+	// 啟動 gRPC server
 	go func() {
 		if err := server.StartGRPCServer(); err != nil {
 			t.Errorf("failed to start gRPC server: %v", err)
 		}
 	}()
 
-	// 等待 server 啟動（實際應更健壯，可改用 health check）
-	time.Sleep(500 * time.Millisecond)
+	// 等待 server readiness
+	if err := waitForServerReady(3 * time.Second); err != nil {
+		t.Fatalf("server not ready: %v", err)
+	}
 
-	// 建立 gRPC client 連線，驗證 server 有啟動
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(2*time.Second))
+	// 建立 gRPC client
+	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to connect to gRPC server: %v", err)
 	}
 	defer conn.Close()
-
 	client := proto.NewHealthServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	// 呼叫 Health Check
+	ctx1, cancel1 := context.WithTimeout(context.Background(), time.Second)
+	defer cancel1()
 
-	// 執行 Health Check 或其他測試 RPC
-	_, err = client.Check(ctx, &proto.HealthRequest{})
+	_, err = client.Check(ctx1, &proto.HealthRequest{})
 	if err != nil {
-		t.Errorf("Ping RPC failed: %v", err)
+		t.Errorf("expected successful health check, got error: %v", err)
 	}
 
-	// 停止 gRPC server
+	// 關閉 server
 	server.StopGRPCServer()
 
-	// 再次請求應失敗（可選）
-	_, err = client.Check(ctx, &proto.HealthRequest{})
+	// 等待一點時間以確保 server 停下
+	time.Sleep(200 * time.Millisecond)
+
+	// 嘗試使用新 context 再次呼叫 RPC（應該失敗）
+	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second)
+	defer cancel2()
+
+	_, err = client.Check(ctx2, &proto.HealthRequest{})
 	if err == nil {
 		t.Error("expected error after server shutdown, got nil")
 	}

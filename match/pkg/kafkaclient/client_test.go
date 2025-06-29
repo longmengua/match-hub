@@ -49,7 +49,7 @@ func testKafkaClient(t *testing.T, client interfaces.KafkaClient) {
 	client.Close()
 }
 
-var address = []string{"localhost:19092", "localhost:19093", "localhost:19094"}
+var address = []string{"single-kafka.kafka.orb.local:9092"}
 
 // ✅ 測試 Sarama 實作
 func TestSaramaClient(t *testing.T) {
