@@ -8,7 +8,7 @@
 
 pkg/
 ├── logger/         # 封裝 Logger 並支援 zap/slog
-├── timeutil/       # 時間處理（轉字串、加減、區間）
+├── timeu/          # 時間處理（轉字串、加減、區間）
 ├── errcode/        # 錯誤碼包裝 + gRPC + HTTP 對應
 ├── randx/          # 隨機工具（字串、數字、UUID）
 ├── configx/        # 設定讀取 helper

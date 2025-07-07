@@ -1,10 +1,10 @@
-package server_test
+package grpc_test
 
 import (
 	"context"
 	"errors"
 	"log"
-	"match/internal/server"
+	server "match/internal/server/grpc"
 	"match/proto"
 	"testing"
 	"time"

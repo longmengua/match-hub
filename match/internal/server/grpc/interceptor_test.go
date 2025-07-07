@@ -1,11 +1,11 @@
-package middleware_test
+package grpc_test
 
 import (
 	"context"
-	"match/internal/middleware"
+	"match/internal/server/grpc"
 	"testing"
 
-	"google.golang.org/grpc"
+	googleGRPC "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -26,7 +26,7 @@ func TestTraceIDInterceptor_WithTraceID(t *testing.T) {
 		return "ok", nil
 	}
 
-	resp, err := middleware.TraceIDInterceptor(ctx, nil, &grpc.UnaryServerInfo{
+	resp, err := grpc.TraceIDInterceptor(ctx, nil, &googleGRPC.UnaryServerInfo{
 		FullMethod: "/test/trace",
 	}, handler)
 
@@ -52,7 +52,7 @@ func TestTraceIDInterceptor_WithoutTraceID(t *testing.T) {
 		return "ok", nil
 	}
 
-	resp, err := middleware.TraceIDInterceptor(ctx, nil, &grpc.UnaryServerInfo{
+	resp, err := grpc.TraceIDInterceptor(ctx, nil, &googleGRPC.UnaryServerInfo{
 		FullMethod: "/test/trace",
 	}, handler)
 
@@ -69,7 +69,7 @@ func TestRecoveryInterceptor_NoPanic(t *testing.T) {
 		return "safe", nil
 	}
 
-	resp, err := middleware.RecoveryInterceptor(context.Background(), nil, &grpc.UnaryServerInfo{
+	resp, err := grpc.RecoveryInterceptor(context.Background(), nil, &googleGRPC.UnaryServerInfo{
 		FullMethod: "/test/recovery",
 	}, handler)
 
@@ -86,7 +86,7 @@ func TestRecoveryInterceptor_WithPanic(t *testing.T) {
 		panic("boom")
 	}
 
-	resp, err := middleware.RecoveryInterceptor(context.Background(), nil, &grpc.UnaryServerInfo{
+	resp, err := grpc.RecoveryInterceptor(context.Background(), nil, &googleGRPC.UnaryServerInfo{
 		FullMethod: "/test/recovery",
 	}, handler)
 
@@ -102,14 +102,14 @@ func TestRecoveryInterceptor_WithPanic(t *testing.T) {
 func TestChainUnaryInterceptors_OrderAndChaining(t *testing.T) {
 	order := []string{}
 
-	interceptor1 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	interceptor1 := func(ctx context.Context, req interface{}, info *googleGRPC.UnaryServerInfo, handler googleGRPC.UnaryHandler) (interface{}, error) {
 		order = append(order, "1-before")
 		resp, err := handler(ctx, req)
 		order = append(order, "1-after")
 		return resp, err
 	}
 
-	interceptor2 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	interceptor2 := func(ctx context.Context, req interface{}, info *googleGRPC.UnaryServerInfo, handler googleGRPC.UnaryHandler) (interface{}, error) {
 		order = append(order, "2-before")
 		resp, err := handler(ctx, req)
 		order = append(order, "2-after")
@@ -121,8 +121,8 @@ func TestChainUnaryInterceptors_OrderAndChaining(t *testing.T) {
 		return "done", nil
 	}
 
-	chain := middleware.ChainUnaryInterceptors(interceptor1, interceptor2)
-	resp, err := chain(context.Background(), nil, &grpc.UnaryServerInfo{
+	chain := grpc.ChainUnaryInterceptors(interceptor1, interceptor2)
+	resp, err := chain(context.Background(), nil, &googleGRPC.UnaryServerInfo{
 		FullMethod: "/test/chain",
 	}, handler)
 

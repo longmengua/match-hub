@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"log"
-	"match/internal/server"
+	server "match/internal/server/grpc"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
+	// context.WithCancel(context.Background())
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
