@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log"
-	server "match/internal/server/grpc"
+	"match/config"
+	"match/internal/server/grpc"
+	"match/pkg/redisclient"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,9 +16,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// 初始化 Redis 連線
+	_, err := redisclient.New("single", config.RedisAddrs, config.RedisPass, config.RedisDB)
+	if err != nil {
+		log.Fatalf("Failed to initialize Redis: %v", err)
+	}
+
 	// 啟動 gRPC server
 	go func() {
-		if err := server.StartGRPCServer(); err != nil {
+		if err := grpc.StartGRPCServer(); err != nil {
 			log.Fatalf("gRPC server error: %v", err)
 		}
 	}()
@@ -26,7 +34,7 @@ func main() {
 	log.Println("Main: shutdown signal received")
 
 	// 呼叫個別 shutdown 函式
-	server.StopGRPCServer()
+	grpc.StopGRPCServer()
 
 	log.Println("Main: all servers shutdown cleanly")
 }
