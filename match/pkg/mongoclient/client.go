@@ -2,66 +2,136 @@ package mongoclient
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
-type User struct {
-	ID    string `bson:"_id,omitempty"`
-	Name  string `bson:"name"`
-	Email string `bson:"email"`
-	Age   int    `bson:"age"`
+type Config struct {
+	Hosts                            []string
+	Username                         string
+	Password                         string
+	DatabaseName                     string
+	MinPoolSize                      uint64
+	MaxPoolSize                      uint64
+	MaxConnIdleTime                  time.Duration
+	EnableStandardReadWriteSplitMode bool
+	MaxStaleness                     time.Duration
+	ReplicaName                      string
+	Compressors                      []string
 }
 
 type MongoClient struct {
-	client     *mongo.Client
-	collection *mongo.Collection
-	ctx        context.Context
-	cancel     context.CancelFunc
+	serverConf  *Config
+	options     *options.ClientOptions
+	db          *mongo.Database
+	client      *mongo.Client
+	collections map[string]*mongo.Collection
+	ctx         context.Context
+	cancel      context.CancelFunc
 }
 
-func NewMongoClient(uri, dbName, collectionName string) (*MongoClient, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
-	if err != nil {
-		cancel()
-		return nil, err
+func New(conf *Config, opts ...func(*MongoClient)) *MongoClient {
+	cli := &MongoClient{serverConf: conf}
+
+	cli.options = options.Client().
+		SetHosts(conf.Hosts).
+		SetMaxConnIdleTime(30 * time.Second).
+		SetMinPoolSize(5).
+		SetMaxPoolSize(100)
+
+	if conf.MinPoolSize != 0 {
+		cli.options.SetMinPoolSize(conf.MinPoolSize)
+	}
+	if conf.MaxPoolSize != 0 {
+		cli.options.SetMaxPoolSize(conf.MaxPoolSize)
+	}
+	if conf.MaxConnIdleTime != 0 {
+		cli.options.SetMaxConnIdleTime(conf.MaxConnIdleTime)
 	}
 
-	return &MongoClient{
-		client:     client,
-		collection: client.Database(dbName).Collection(collectionName),
-		ctx:        ctx,
-		cancel:     cancel,
-	}, nil
+	if conf.Username != "" {
+		cli.options.SetAuth(options.Credential{
+			Username: conf.Username,
+			Password: conf.Password,
+		})
+	}
+
+	if conf.EnableStandardReadWriteSplitMode {
+		maxStaleness := conf.MaxStaleness
+		if maxStaleness < 90*time.Second {
+			maxStaleness = 90 * time.Second
+		}
+		cli.options.SetWriteConcern(writeconcern.Majority())
+		cli.options.SetReadPreference(readpref.SecondaryPreferred(readpref.WithMaxStaleness(maxStaleness)))
+		cli.options.SetReadConcern(readconcern.Majority())
+	}
+
+	if conf.ReplicaName != "" {
+		cli.options.SetReplicaSet(conf.ReplicaName)
+	}
+
+	if len(conf.Compressors) > 0 {
+		cli.options.SetCompressors(conf.Compressors)
+	}
+
+	for _, opt := range opts {
+		opt(cli)
+	}
+
+	return cli
 }
 
-func (m *MongoClient) Start() error {
-	return m.client.Ping(m.ctx, nil)
+// Start establishes connection, stores db, collection, context
+func (cli *MongoClient) Start() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	client, err := mongo.Connect(ctx, cli.options)
+	if err != nil {
+		cancel()
+		return fmt.Errorf("mongo connect error: %w", err)
+	}
+
+	if err := client.Ping(ctx, nil); err != nil {
+		cancel()
+		return fmt.Errorf("mongo ping error: %w", err)
+	}
+
+	db := client.Database(cli.serverConf.DatabaseName)
+
+	cli.ctx = ctx
+	cli.cancel = cancel
+	cli.client = client
+	cli.db = db
+
+	return nil
 }
 
 func (m *MongoClient) Close() {
-	m.cancel()
-	_ = m.client.Disconnect(m.ctx)
+	if m.cancel != nil {
+		m.cancel()
+	}
+	if m.client != nil {
+		_ = m.client.Disconnect(context.Background())
+	}
 }
 
-func (m *MongoClient) CreateUser(user User) (*mongo.InsertOneResult, error) {
-	return m.collection.InsertOne(m.ctx, user)
-}
+func (m *MongoClient) Collection(collectionName string) *mongo.Collection {
+	if m.collections == nil {
+		m.collections = make(map[string]*mongo.Collection)
+	}
+	if m.collections[collectionName] != nil {
+		return m.collections[collectionName]
+	}
+	m.collections[collectionName] = m.db.Collection(collectionName)
+	if m.collections[collectionName] == nil {
+		fmt.Printf("Collection %s not found in database %s\n", collectionName, m.serverConf.DatabaseName)
+		return nil
+	}
 
-func (m *MongoClient) GetUserByName(name string) (*User, error) {
-	var result User
-	err := m.collection.FindOne(m.ctx, bson.M{"name": name}).Decode(&result)
-	return &result, err
-}
-
-func (m *MongoClient) UpdateUserAge(name string, age int) (*mongo.UpdateResult, error) {
-	return m.collection.UpdateOne(m.ctx, bson.M{"name": name}, bson.M{"$set": bson.M{"age": age}})
-}
-
-func (m *MongoClient) DeleteUser(name string) (*mongo.DeleteResult, error) {
-	return m.collection.DeleteOne(m.ctx, bson.M{"name": name})
+	return m.collections[collectionName]
 }

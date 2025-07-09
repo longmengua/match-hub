@@ -1,54 +1,94 @@
 package mongoclient_test
 
 import (
+	"context"
 	"match/pkg/mongoclient"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type User struct {
+	ID    primitive.ObjectID `bson:"_id,omitempty"`
+	Name  string             `bson:"name"`
+	Email string             `bson:"email"`
+	Age   int                `bson:"age"`
+}
+
+func getTestConfig() *mongoclient.Config {
+	return &mongoclient.Config{
+		Hosts:        []string{"localhost:27017"},
+		DatabaseName: "testdb",
+		MinPoolSize:  1,
+		MaxPoolSize:  5,
+	}
+}
+
 func TestMongoClient_CRUD(t *testing.T) {
-	client, err := mongoclient.NewMongoClient("mongodb://localhost:27017", "testdb", "users")
+	conf := getTestConfig()
+	client := mongoclient.New(conf)
+
+	err := client.Start()
 	if err != nil {
-		t.Fatalf("連接失敗: %v", err)
+		t.Fatalf("Failed to start client: %v", err)
 	}
 	defer client.Close()
 
-	if err := client.Start(); err != nil {
-		t.Fatalf("啟動失敗: %v", err)
+	collection := client.Collection("users")
+	ctx := context.Background()
+
+	// --- Create ---
+	user := User{
+		Name:  "Alice",
+		Email: "alice@example.com",
+		Age:   30,
 	}
 
-	// Create
-	user := mongoclient.User{Name: "Bob", Email: "bob@example.com", Age: 20}
-	_, err = client.CreateUser(user)
+	insertRes, err := collection.InsertOne(ctx, user)
 	if err != nil {
-		t.Fatalf("新增失敗: %v", err)
+		t.Fatalf("InsertOne failed: %v", err)
 	}
+	insertedID := insertRes.InsertedID.(primitive.ObjectID)
 
-	// Read
-	got, err := client.GetUserByName("Bob")
-	if err != nil || got.Name != "Bob" {
-		t.Fatalf("查詢失敗: %v", err)
-	}
-
-	// Update
-	_, err = client.UpdateUserAge("Bob", 21)
+	// --- Read ---
+	var result User
+	err = collection.FindOne(ctx, bson.M{"_id": insertedID}).Decode(&result)
 	if err != nil {
-		t.Fatalf("更新失敗: %v", err)
+		t.Fatalf("FindOne failed: %v", err)
+	}
+	if result.Name != user.Name {
+		t.Errorf("Expected name %s, got %s", user.Name, result.Name)
 	}
 
-	got, _ = client.GetUserByName("Bob")
-	if got.Age != 21 {
-		t.Fatalf("更新年齡錯誤，應為 21，實為 %d", got.Age)
+	// --- Update ---
+	update := bson.M{
+		"$set": bson.M{"age": 35},
 	}
-
-	// Delete
-	_, err = client.DeleteUser("Bob")
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": insertedID}, update)
 	if err != nil {
-		t.Fatalf("刪除失敗: %v", err)
+		t.Fatalf("UpdateOne failed: %v", err)
 	}
 
-	// Ensure deleted
-	_, err = client.GetUserByName("Bob")
+	// Confirm Update
+	var updated User
+	err = collection.FindOne(ctx, bson.M{"_id": insertedID}).Decode(&updated)
+	if err != nil {
+		t.Fatalf("FindOne after update failed: %v", err)
+	}
+	if updated.Age != 35 {
+		t.Errorf("Expected age 35, got %d", updated.Age)
+	}
+
+	// --- Delete ---
+	_, err = collection.DeleteOne(ctx, bson.M{"_id": insertedID})
+	if err != nil {
+		t.Fatalf("DeleteOne failed: %v", err)
+	}
+
+	// Confirm Delete
+	err = collection.FindOne(ctx, bson.M{"_id": insertedID}).Decode(&User{})
 	if err == nil {
-		t.Fatalf("應該找不到資料，但仍查到")
+		t.Errorf("Expected error on FindOne after delete, got nil")
 	}
 }
