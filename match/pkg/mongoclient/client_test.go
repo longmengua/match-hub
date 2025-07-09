@@ -1,12 +1,12 @@
-package mongo_test
+package mongoclient_test
 
 import (
-	"match/pkg/mongo"
+	"match/pkg/mongoclient"
 	"testing"
 )
 
 func TestMongoClient_CRUD(t *testing.T) {
-	client, err := mongo.NewMongoClient("mongodb://localhost:27017", "testdb", "users")
+	client, err := mongoclient.NewMongoClient("mongodb://localhost:27017", "testdb", "users")
 	if err != nil {
 		t.Fatalf("連接失敗: %v", err)
 	}
@@ -17,7 +17,7 @@ func TestMongoClient_CRUD(t *testing.T) {
 	}
 
 	// Create
-	user := mongo.User{Name: "Bob", Email: "bob@example.com", Age: 20}
+	user := mongoclient.User{Name: "Bob", Email: "bob@example.com", Age: 20}
 	_, err = client.CreateUser(user)
 	if err != nil {
 		t.Fatalf("新增失敗: %v", err)
