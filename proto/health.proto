@@ -2,14 +2,15 @@ syntax = "proto3";
 
 package health;
 
-// option go_package = "match/proto/health;proto";
+import "common.proto";
 
 message HealthRequest {
   string must_be_hello = 1;
 }
 
 message HealthResponse {
-  string version = 1;
+  common.CommonResponse common_response = 1; // 通用回應格式
+  string version = 2;
 }
 
 service HealthService {
