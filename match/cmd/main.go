@@ -5,6 +5,7 @@ import (
 	"log"
 	"match/config"
 	"match/internal/server/grpc"
+	"match/pkg/engin"
 	"match/pkg/redisclient"
 	"os"
 	"os/signal"
@@ -16,6 +17,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// 初始化撮合引擎管理器等
+	engineMap := make(map[string]*engin.Engine)
+	engineMap["BTCUSDT"] = engin.NewEngine()
+	engineMap["ETHUSDT"] = engin.NewEngine()
+	engineMap["DOGEUSDT"] = engin.NewEngine()
+	enginManager := engin.NewEngineManager(engineMap)
+
 	// 初始化 Redis 連線
 	_, err := redisclient.New("single", config.RedisAddrs, config.RedisPass, config.RedisDB)
 	if err != nil {
@@ -24,7 +32,7 @@ func main() {
 
 	// 啟動 gRPC server
 	go func() {
-		if err := grpc.StartGRPCServer(); err != nil {
+		if err := grpc.StartGRPCServer(enginManager); err != nil {
 			log.Fatalf("gRPC server error: %v", err)
 		}
 	}()

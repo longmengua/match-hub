@@ -3,6 +3,8 @@ package grpc
 import (
 	"log"
 	"match/internal/server/grpc/health"
+	"match/internal/server/grpc/match"
+	"match/pkg/engin"
 	"match/proto"
 	"net"
 	"time"
@@ -15,7 +17,7 @@ var (
 	listener net.Listener
 )
 
-func StartGRPCServer() error {
+func StartGRPCServer(enginManager *engin.EngineManager) error {
 	listener, _ = net.Listen("tcp", ":50051")
 
 	// Create gRPC server with middleware interceptors
@@ -27,7 +29,8 @@ func StartGRPCServer() error {
 	)
 
 	// 在這裡註冊你的 gRPC service，例如：
-	proto.RegisterHealthServiceServer(grpcSrv, &health.Server{})
+	proto.RegisterHealthServiceServer(grpcSrv, health.NewServer())
+	proto.RegisterMatchServiceServer(grpcSrv, match.NewServer(enginManager))
 
 	log.Println("gRPC server listening on :50051")
 	return grpcSrv.Serve(listener)

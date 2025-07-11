@@ -36,7 +36,7 @@ func waitForServerReady(timeout time.Duration) error {
 func TestGRPCServerLifecycle(t *testing.T) {
 	// 啟動 gRPC server
 	go func() {
-		if err := server.StartGRPCServer(); err != nil {
+		if err := server.StartGRPCServer(nil); err != nil {
 			t.Errorf("failed to start gRPC server: %v", err)
 		}
 	}()
