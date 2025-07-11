@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package common;
 
-option go_package = "match/proto/common;common";
+option go_package = "match/proto;proto";
 
 // 通用回應格式
 message CommonResponse {

@@ -4,7 +4,7 @@ package match;
 
 import "common.proto";
 
-// option go_package = "match/proto/match;match";
+// option go_package = "match/proto/match;proto";
 
 // 訂單方向
 enum OrderSide {

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package health;
 
+// option go_package = "match/proto/health;proto";
+
 message HealthRequest {
   string must_be_hello = 1;
 }

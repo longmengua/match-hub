@@ -7,11 +7,11 @@
 package proto
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	common "match/proto/common"
 	reflect "reflect"
 	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -321,8 +321,8 @@ type MatchResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	CommonResponse *common.CommonResponse `protobuf:"bytes,1,opt,name=common_response,json=commonResponse,proto3" json:"common_response,omitempty"` // 通用回應格式
-	OrderBook      *OrderBook             `protobuf:"bytes,2,opt,name=order_book,json=orderBook,proto3" json:"order_book,omitempty"`
+	CommonResponse *CommonResponse `protobuf:"bytes,1,opt,name=common_response,json=commonResponse,proto3" json:"common_response,omitempty"` // 通用回應格式
+	OrderBook      *OrderBook      `protobuf:"bytes,2,opt,name=order_book,json=orderBook,proto3" json:"order_book,omitempty"`
 }
 
 func (x *MatchResponse) Reset() {
@@ -357,7 +357,7 @@ func (*MatchResponse) Descriptor() ([]byte, []int) {
 	return file_match_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MatchResponse) GetCommonResponse() *common.CommonResponse {
+func (x *MatchResponse) GetCommonResponse() *CommonResponse {
 	if x != nil {
 		return x.CommonResponse
 	}
@@ -434,13 +434,13 @@ func file_match_proto_rawDescGZIP() []byte {
 var file_match_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_match_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_match_proto_goTypes = []interface{}{
-	(OrderSide)(0),                // 0: match.OrderSide
-	(OrderType)(0),                // 1: match.OrderType
-	(*Order)(nil),                 // 2: match.Order
-	(*OrderBook)(nil),             // 3: match.OrderBook
-	(*MatchRequest)(nil),          // 4: match.MatchRequest
-	(*MatchResponse)(nil),         // 5: match.MatchResponse
-	(*common.CommonResponse)(nil), // 6: common.CommonResponse
+	(OrderSide)(0),         // 0: match.OrderSide
+	(OrderType)(0),         // 1: match.OrderType
+	(*Order)(nil),          // 2: match.Order
+	(*OrderBook)(nil),      // 3: match.OrderBook
+	(*MatchRequest)(nil),   // 4: match.MatchRequest
+	(*MatchResponse)(nil),  // 5: match.MatchResponse
+	(*CommonResponse)(nil), // 6: common.CommonResponse
 }
 var file_match_proto_depIdxs = []int32{
 	1, // 0: match.Order.type:type_name -> match.OrderType
@@ -463,6 +463,7 @@ func file_match_proto_init() {
 	if File_match_proto != nil {
 		return
 	}
+	file_common_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_match_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Order); i {
