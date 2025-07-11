@@ -25,6 +25,7 @@ func StartGRPCServer() error {
 			RecoveryInterceptor,
 		)),
 	)
+
 	// 在這裡註冊你的 gRPC service，例如：
 	proto.RegisterHealthServiceServer(grpcSrv, &check.Server{})
 
