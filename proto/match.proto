@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package match;
+
+import "common.proto";
+
+// option go_package = "match/proto/match;match";
+
+// 訂單方向
+enum OrderSide {
+  BUY = 0;
+  SELL = 1;
+}
+
+// 訂單類型
+enum OrderType {
+  LIMIT = 0;
+  MARKET = 1;
+}
+
+// 單一訂單
+message Order {
+  string id = 1;
+  double price = 2;
+  double quantity = 3;
+  double leaves_quantity = 4;
+  OrderType type = 5;
+  OrderSide side = 6;
+  int64 timestamp = 7; // Unix timestamp in milliseconds
+}
+
+// 回傳的 OrderBook 結構
+message OrderBook {
+  repeated Order buy_orders = 1;
+  repeated Order sell_orders = 2;
+}
+
+// 請求
+message MatchRequest {
+  string crypto = 1;
+}
+
+// 回應（OrderBook）
+message MatchResponse {
+  common.CommonResponse common_response = 1; // 通用回應格式
+  OrderBook order_book = 2;
+}
+
+// gRPC 服務定義
+service MatchService {
+  rpc GetOrderBook (MatchRequest) returns (MatchResponse);
+}

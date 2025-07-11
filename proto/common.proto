@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "match/proto/common;common";
+
+// 通用回應格式
+message CommonResponse {
+  int32  code = 1;                   // 狀態碼
+  string message = 2;                // 描述訊息
+}
