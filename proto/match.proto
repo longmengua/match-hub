@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package match;
 
-import "common.proto";
+import "error.proto";
 
 // option go_package = "match/proto/match;proto";
 
@@ -42,7 +42,7 @@ message MatchRequest {
 
 // 回應（OrderBook）
 message MatchResponse {
-  common.CommonResponse common_response = 1; // 通用回應格式
+  error.Error error = 1;
   OrderBook order_book = 2;
 }
 

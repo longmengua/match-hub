@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package health;
 
-import "common.proto";
+import "error.proto";
 
 message HealthRequest {
   string must_be_hello = 1;
 }
 
 message HealthResponse {
-  common.CommonResponse common_response = 1; // 通用回應格式
+  error.Error error = 1;
   string version = 2;
 }
 

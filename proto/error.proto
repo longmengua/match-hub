@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package error;
+
+option go_package = "match/proto;proto";
+
+enum ErrorCode {
+  UNSPECIFIED = 0; // 未指定
+  INVALID_ARGUMENT = 1; // 無效的參數
+  NOT_FOUND = 2;        // 資源未找到
+  INTERNAL_ERROR = 3;   // 內部錯誤
+  UNAUTHORIZED = 4;     // 未授權
+  FORBIDDEN = 5;        // 禁止訪問
+  SUCCESS = 200;        // 成功
+  CREATED = 201;        // 創建成功
+  ACCEPTED = 202;       // 請求已接受
+  NO_CONTENT = 204;     // 無內容
+  BAD_REQUEST = 400;    // 錯誤的請求
+  NOT_IMPLEMENTED = 501; // 未實現
+  SERVICE_UNAVAILABLE = 503; // 服務不可用
+  GATEWAY_TIMEOUT = 504; // 閘道超時
+  TOO_MANY_REQUESTS = 429; // 請求過多
+  UNAUTHORIZED_ACCESS = 401; // 未授權訪問
+  METHOD_NOT_ALLOWED = 405; // 方法不允許
+  REQUEST_TIMEOUT = 408; // 請求超時
+  PAYLOAD_TOO_LARGE = 413; // 載荷過大
+}
+
+// 通用回應格式
+message Error {
+  ErrorCode code = 1;           // 狀態碼
+  string message = 2;               // 描述訊息
+}

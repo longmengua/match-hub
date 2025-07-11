@@ -3,16 +3,13 @@ package grpc_test
 import (
 	"context"
 	"errors"
-	"log"
 	server "match/internal/server/grpc"
 	"match/proto"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 )
 
 func waitForServerReady(timeout time.Duration) error {
@@ -62,12 +59,9 @@ func TestGRPCServerLifecycle(t *testing.T) {
 	// if err != nil {
 	// 	t.Errorf("expected successful health check, got error: %v", err)
 	// }
-	_, err = client.Check(ctx1, &proto.HealthRequest{MustBeHello: ""})
-	if err == nil {
-		log.Printf("%v", err)
-		t.Error("expected invalid argument error, got nil")
-	} else if status.Code(err) != codes.InvalidArgument {
-		t.Errorf("expected InvalidArgument error, got %v", err)
+	res, err := client.Check(ctx1, &proto.HealthRequest{MustBeHello: ""})
+	if err != nil || res.Error.Code != proto.ErrorCode_INVALID_ARGUMENT {
+		t.Errorf("Unexpected error, got %v with version %s", res.Error, res.Version)
 	}
 
 	// 關閉 server
