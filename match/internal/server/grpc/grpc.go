@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"log"
-	"match/internal/server/grpc/check"
+	"match/internal/server/grpc/health"
 	"match/proto"
 	"net"
 	"time"
@@ -27,7 +27,7 @@ func StartGRPCServer() error {
 	)
 
 	// 在這裡註冊你的 gRPC service，例如：
-	proto.RegisterHealthServiceServer(grpcSrv, &check.Server{})
+	proto.RegisterHealthServiceServer(grpcSrv, &health.Server{})
 
 	log.Println("gRPC server listening on :50051")
 	return grpcSrv.Serve(listener)
