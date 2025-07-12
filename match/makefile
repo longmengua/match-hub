@@ -26,7 +26,7 @@ PROTOC := $(BIN_DIR)/protoc
 GEN_GO := $(BIN_DIR)/protoc-gen-go
 GEN_GRPC := $(BIN_DIR)/protoc-gen-go-grpc
 
-# 啟動應用程式
+# 啟動應用程式, 請先執行 make proto 生成 pb
 dev:  
 	go run cmd/main.go
 
