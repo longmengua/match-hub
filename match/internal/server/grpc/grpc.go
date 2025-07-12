@@ -17,26 +17,37 @@ var (
 	listener net.Listener
 )
 
-func StartGRPCServer(enginManager *engin.EngineManager) error {
+type GRPCServer struct {
+	engineManager *engin.EngineManager
+}
+
+func NewGRPCServer(enginManager *engin.EngineManager) *GRPCServer {
+	return &GRPCServer{
+		engineManager: enginManager,
+	}
+}
+
+func (g *GRPCServer) Start() error {
 	listener, _ = net.Listen("tcp", ":50051")
 
 	// Create gRPC server with middleware interceptors
 	grpcSrv = grpc.NewServer(
 		grpc.UnaryInterceptor(ChainUnaryInterceptors(
 			TraceIDInterceptor,
+			ErrorLoggingInterceptor,
 			RecoveryInterceptor,
 		)),
 	)
 
 	// 在這裡註冊你的 gRPC service，例如：
 	proto.RegisterHealthServiceServer(grpcSrv, health.NewServer())
-	proto.RegisterMatchServiceServer(grpcSrv, match.NewServer(enginManager))
+	proto.RegisterMatchServiceServer(grpcSrv, match.NewServer(g.engineManager))
 
 	log.Println("gRPC server listening on :50051")
 	return grpcSrv.Serve(listener)
 }
 
-func StopGRPCServer() {
+func (g *GRPCServer) Stop() {
 	log.Println("Shutting down gRPC server...")
 
 	// 支援優雅關閉

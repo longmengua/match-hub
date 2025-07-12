@@ -30,4 +30,5 @@ enum ErrorCode {
 message Error {
   ErrorCode code = 1;           // 狀態碼
   string message = 2;               // 描述訊息
+  string trace_id = 3;             // 跟蹤 ID，用於追蹤請求
 }

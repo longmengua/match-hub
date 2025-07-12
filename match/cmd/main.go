@@ -31,8 +31,9 @@ func main() {
 	}
 
 	// 啟動 gRPC server
+	grpcServer := grpc.NewGRPCServer(enginManager)
 	go func() {
-		if err := grpc.StartGRPCServer(enginManager); err != nil {
+		if err := grpcServer.Start(); err != nil {
 			log.Fatalf("gRPC server error: %v", err)
 		}
 	}()
@@ -42,7 +43,7 @@ func main() {
 	log.Println("Main: shutdown signal received")
 
 	// 呼叫個別 shutdown 函式
-	grpc.StopGRPCServer()
+	grpcServer.Stop()
 
 	log.Println("Main: all servers shutdown cleanly")
 }

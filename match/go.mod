@@ -42,6 +42,7 @@ require (
 
 require (
 	github.com/IBM/sarama v1.42.1
+	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.9.0
 	github.com/segmentio/kafka-go v0.4.48
 	github.com/stretchr/testify v1.10.0

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -14,11 +15,10 @@ import (
 func ChainUnaryInterceptors(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
-		// Chain interceptors recursively
+	) (any, error) {
 		curr := handler
 		for i := len(interceptors) - 1; i >= 0; i-- {
 			interceptor := interceptors[i]
@@ -33,40 +33,73 @@ func WrapUnaryHandler(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) grpc.UnaryHandler {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
+	return func(ctx context.Context, req any) (any, error) {
 		return interceptor(ctx, req, info, handler)
 	}
 }
 
-// traceIDInterceptor injects or logs a traceID from metadata
+type contextKey string
+
+const traceIDKey contextKey = "trace_id"
+
+// Helper: get trace_id from context
+func GetTraceID(ctx context.Context) string {
+	if v, ok := ctx.Value(traceIDKey).(string); ok {
+		return v
+	}
+	return ""
+}
+
+// Interceptor: inject trace_id (generate one if missing), and log if generated
 func TraceIDInterceptor(
 	ctx context.Context,
-	req interface{},
+	req any,
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
-) (interface{}, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		if traceIDs := md.Get("trace_id"); len(traceIDs) > 0 {
-			ctx = context.WithValue(ctx, "trace_id", traceIDs[0])
-		}
+) (any, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+
+	var traceID string
+	if traceIDs := md.Get("trace_id"); len(traceIDs) > 0 {
+		traceID = traceIDs[0]
+	} else {
+		// Generate a new trace_id if not present
+		// todo: can change UUID in something more meaningful
+		traceID = uuid.New().String()
+		log.Printf("[TRACE] Generated trace_id=%s | method=%s | req=%+v", traceID, info.FullMethod, req)
 	}
-	// You can log or propagate the trace_id here if needed
+
+	ctx = context.WithValue(ctx, traceIDKey, traceID)
 	return handler(ctx, req)
 }
 
-// recoveryInterceptor recovers from panics and returns a gRPC error
+// Interceptor: recover from panic
 func RecoveryInterceptor(
 	ctx context.Context,
-	req interface{},
+	req any,
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
-) (resp interface{}, err error) {
+) (resp any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic recovered in gRPC method %s: %v", info.FullMethod, r)
+			log.Printf("[PANIC] Recovered in gRPC method %s: %v", info.FullMethod, r)
 			err = status.Errorf(codes.Internal, "internal server error")
 		}
 	}()
 	return handler(ctx, req)
+}
+
+// Interceptor: log errors if any
+func ErrorLoggingInterceptor(
+	ctx context.Context,
+	req any,
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (any, error) {
+	resp, err := handler(ctx, req)
+	if err != nil {
+		traceID := GetTraceID(ctx)
+		log.Printf("[ERROR] method=%s | trace_id=%s | error=%v", info.FullMethod, traceID, err)
+	}
+	return resp, err
 }
