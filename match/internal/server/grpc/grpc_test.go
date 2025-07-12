@@ -61,8 +61,14 @@ func TestGRPCServerLifecycle(t *testing.T) {
 	// 	t.Errorf("expected successful health check, got error: %v", err)
 	// }
 	res, err := client.Check(ctx1, &proto.HealthRequest{MustBeHello: ""})
-	if err != nil || res.Error.Code != proto.ErrorCode_INVALID_ARGUMENT {
-		t.Errorf("Unexpected error, got %v with version %s", res.Error, res.Version)
+	if res.Error.TraceId == "" {
+		t.Error("Expected trace_id to be set in response, got empty")
+	}
+	if err != nil {
+		t.Errorf("Unexpected error, got: %v", err)
+	}
+	if res.Error.Code != proto.ErrorCode_INVALID_ARGUMENT {
+		t.Errorf("Unexpected error, got: %v", res.Error)
 	}
 
 	// 關閉 server

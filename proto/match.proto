@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package match;
 
-import "error.proto";
+import "base.proto";
 
 // option go_package = "match/proto/match;proto";
 
@@ -42,7 +42,7 @@ message MatchRequest {
 
 // 回應（OrderBook）
 message MatchResponse {
-  error.Error error = 1;
+  base.Status status = 1;
   OrderBook order_book = 2;
 }
 

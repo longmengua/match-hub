@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package error;
+package base;
 
 option go_package = "match/proto;proto";
 
-enum ErrorCode {
+enum Code {
   UNSPECIFIED = 0; // 未指定
   INVALID_ARGUMENT = 1; // 無效的參數
   NOT_FOUND = 2;        // 資源未找到
@@ -27,8 +27,8 @@ enum ErrorCode {
 }
 
 // 通用回應格式
-message Error {
-  ErrorCode code = 1;           // 狀態碼
+message Status {
+  Code code = 1;           // 狀態碼
   string message = 2;               // 描述訊息
   string trace_id = 3;             // 跟蹤 ID，用於追蹤請求
 }

@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package health;
 
-import "error.proto";
+import "base.proto";
 
 message HealthRequest {
   string must_be_hello = 1;
 }
 
 message HealthResponse {
-  error.Error error = 1;
+  base.Status status = 1;
   string version = 2;
 }
 
