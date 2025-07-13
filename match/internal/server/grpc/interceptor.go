@@ -40,11 +40,11 @@ func WrapUnaryHandler(
 
 type contextKey string
 
-const traceIDKey contextKey = "trace_id"
+const TraceIDKey contextKey = "trace_id"
 
-// Helper: get trace_id from context
+// Helper: get trace_id from context, traceID will be populated in TraceIDInterceptor
 func GetTraceID(ctx context.Context) string {
-	if v, ok := ctx.Value(traceIDKey).(string); ok {
+	if v, ok := ctx.Value(TraceIDKey).(string); ok {
 		return v
 	}
 	return ""
@@ -69,7 +69,7 @@ func TraceIDInterceptor(
 		log.Printf("[TRACE] Generated trace_id=%s | method=%s | req=%+v", traceID, info.FullMethod, req)
 	}
 
-	ctx = context.WithValue(ctx, traceIDKey, traceID)
+	ctx = context.WithValue(ctx, TraceIDKey, traceID)
 	return handler(ctx, req)
 }
 
